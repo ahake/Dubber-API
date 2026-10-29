@@ -1,0 +1,57 @@
+# PowerShell
+# Session transcripts, history, and temporary files
+*.log
+*.tmp
+*.temp
+PowerShell_transcript*.txt
+ConsoleHost_history.txt
+
+# Module analysis cache and packaged modules
+ModuleAnalysisCache
+*.psm1.Cache
+*.zip
+*.nupkg
+
+# Test and coverage output
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# User-specific and editor files
+*.user
+*.suo
+.vs/
+.idea/
+curl.sh
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Secrets and local environment
+.env
+.env.*
+*.pfx
+*.publishsettings
+
+# Script output
+# Get-DubberRecordings.ps1 writes recordings.json by default (DUBBER_OUT_FILE).
+# Ignore that dump and any other local exports so API payloads stay out of git.
+recordings.json
+profile.json
+output/
+exports/
+
+# Other generated data files. Source in this repo is the PowerShell scripts.
+# To track a specific file later, add a negation rule, for example: !config.json
+*.json
+*.csv
+*.xml
