@@ -68,7 +68,7 @@ param(
 
     [string]$Region = "au",
 
-    [string]$AccountId = "35511",
+    [string]$AccountId = "",
 
     [string]$OutDir
 )

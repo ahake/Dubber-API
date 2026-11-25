@@ -21,8 +21,8 @@ $ClientId     = "your-mashery-client-id"
 $ClientSecret = "your-mashery-client-secret"
 $AuthId       = "your-auth-id"
 $AuthToken    = "your-auth-token"
-$Region       = "au"
-$AccountId    = "35511"
+$Region       = "your-region"
+$AccountId    = "your-account-id"
 
 # Used when $Command is Audio
 $Listener = "agent@example.com"
