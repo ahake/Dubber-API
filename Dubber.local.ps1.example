@@ -1,0 +1,72 @@
+#Requires -Version 5.1
+<#
+.SYNOPSIS
+  Local credentials and runner for the Dubber scripts.
+
+.DESCRIPTION
+  Copy this file to Dubber.local.ps1, fill in your values, and run:
+
+    .\Dubber.local.ps1
+
+  Dubber.local.ps1 is gitignored. Do not commit it. Values are passed as
+  parameters; they are not written to environment variables.
+#>
+
+$ErrorActionPreference = "Stop"
+
+# Profile | Recordings | Audio
+$Command = "Profile"
+
+$ClientId     = "your-mashery-client-id"
+$ClientSecret = "your-mashery-client-secret"
+$AuthId       = "your-auth-id"
+$AuthToken    = "your-auth-token"
+$Region       = "au"
+$AccountId    = "35511"
+
+# Used when $Command is Audio
+$Listener = "agent@example.com"
+$Date     = "2026-10-16"
+# $OutDir = Join-Path $PSScriptRoot "recordings\$Date"
+
+$root = $PSScriptRoot
+
+switch ($Command) {
+    "Profile" {
+        & (Join-Path $root "Get-DubberProfile.ps1") `
+            -ClientId $ClientId `
+            -ClientSecret $ClientSecret `
+            -AuthId $AuthId `
+            -AuthToken $AuthToken `
+            -Region $Region
+    }
+    "Recordings" {
+        & (Join-Path $root "Get-DubberRecordings.ps1") `
+            -ClientId $ClientId `
+            -ClientSecret $ClientSecret `
+            -AuthId $AuthId `
+            -AuthToken $AuthToken `
+            -Region $Region `
+            -AccountId $AccountId
+    }
+    "Audio" {
+        $audioParams = @{
+            ClientId     = $ClientId
+            ClientSecret = $ClientSecret
+            AuthId       = $AuthId
+            AuthToken    = $AuthToken
+            Listener     = $Listener
+            Date         = $Date
+            Region       = $Region
+            AccountId    = $AccountId
+        }
+        if ($OutDir) {
+            $audioParams.OutDir = $OutDir
+        }
+        & (Join-Path $root "Get-DubberRecordingAudio.ps1") @audioParams
+    }
+    default {
+        Write-Error "Command must be Profile, Recordings, or Audio."
+        exit 1
+    }
+}

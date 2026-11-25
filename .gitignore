@@ -41,6 +41,7 @@ $RECYCLE.BIN/
 .env.*
 *.pfx
 *.publishsettings
+Dubber.local.ps1
 
 # Script output
 # Get-DubberRecordings.ps1 writes recordings.json by default (DUBBER_OUT_FILE).
@@ -49,6 +50,8 @@ recordings.json
 profile.json
 output/
 exports/
+recordings/
+*.mp3
 
 # Other generated data files. Source in this repo is the PowerShell scripts.
 # To track a specific file later, add a negation rule, for example: !config.json

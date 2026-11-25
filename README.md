@@ -1,6 +1,6 @@
 # Dubber API
 
-PowerShell scripts that sign in to the [Dubber](https://www.dubber.net/) API and call account endpoints. Credentials stay in environment variables for the current session. Downloaded data is written locally and is not meant to be committed.
+PowerShell scripts that sign in to the [Dubber](https://www.dubber.net/) API and call account endpoints. Pass credentials as parameters. Downloaded data is written locally and is not meant to be committed.
 
 ## Requirements
 
@@ -17,17 +17,28 @@ You need four values, all for the **same region**:
 | Client ID and client secret | A Mashery application on [developer.dubber.net](https://developer.dubber.net/) |
 | Auth ID and auth token | The API tab in the Dubber portal |
 
-Set them in the PowerShell session before you run a script. They are not stored by these scripts.
+The easiest way to supply them without environment variables is a local runner that stays out of git.
+
+### Local credentials file
+
+1. Copy the example file:
 
 ```powershell
-$env:DUBBER_CLIENT_ID     = "your-mashery-client-id"
-$env:DUBBER_CLIENT_SECRET = "your-mashery-client-secret"
-$env:DUBBER_AUTH_ID       = "your-auth-id"
-$env:DUBBER_AUTH_TOKEN    = "your-auth-token"
-$env:DUBBER_REGION        = "au"   # optional; au, sandbox, us, and so on
+Copy-Item .\Dubber.local.ps1.example .\Dubber.local.ps1
 ```
 
-The API base URL is `https://api.dubber.net/{region}/v1`. If `DUBBER_REGION` is unset, the scripts use `au`.
+2. Edit `Dubber.local.ps1` and fill in your values. Set `$Command` to `Profile`, `Recordings`, or `Audio`.
+3. Run:
+
+```powershell
+.\Dubber.local.ps1
+```
+
+`Dubber.local.ps1` is listed in `.gitignore`. Do not commit it. The runner passes values as script parameters; it does not set environment variables.
+
+You can also call any script directly and pass the same parameters yourself.
+
+The API base URL is `https://api.dubber.net/{region}/v1`. If `Region` is omitted, the scripts use `au`.
 
 ## Scripts
 
@@ -36,7 +47,12 @@ The API base URL is `https://api.dubber.net/{region}/v1`. If `DUBBER_REGION` is 
 `Get-DubberProfile.ps1` requests a token, calls `GET /profile`, and prints the JSON response.
 
 ```powershell
-.\Get-DubberProfile.ps1
+.\Get-DubberProfile.ps1 `
+  -ClientId "your-mashery-client-id" `
+  -ClientSecret "your-mashery-client-secret" `
+  -AuthId "your-auth-id" `
+  -AuthToken "your-auth-token" `
+  -Region "au"
 ```
 
 ### Download the recordings list
@@ -44,20 +60,25 @@ The API base URL is `https://api.dubber.net/{region}/v1`. If `DUBBER_REGION` is 
 `Get-DubberRecordings.ps1` requests a token, then pages through `GET /accounts/{id}/recordings` (`count=100`, then `before_id` of the last recording on each page). It writes one JSON file.
 
 ```powershell
-$env:DUBBER_ACCOUNT_ID = "your-account-id"          # optional
-$env:DUBBER_OUT_FILE   = ".\recordings.json"        # optional
-.\Get-DubberRecordings.ps1
+.\Get-DubberRecordings.ps1 `
+  -ClientId "your-mashery-client-id" `
+  -ClientSecret "your-mashery-client-secret" `
+  -AuthId "your-auth-id" `
+  -AuthToken "your-auth-token" `
+  -Region "au" `
+  -AccountId "your-account-id" `
+  -OutFile ".\recordings.json"
 ```
 
-| Variable | Required | Default |
+| Parameter | Required | Default |
 | --- | --- | --- |
-| `DUBBER_CLIENT_ID` | Yes | |
-| `DUBBER_CLIENT_SECRET` | Yes | |
-| `DUBBER_AUTH_ID` | Yes | |
-| `DUBBER_AUTH_TOKEN` | Yes | |
-| `DUBBER_REGION` | No | `au` |
-| `DUBBER_ACCOUNT_ID` | No | The account id set in `Get-DubberRecordings.ps1` |
-| `DUBBER_OUT_FILE` | No | `recordings.json` next to the script |
+| `ClientId` | Yes | |
+| `ClientSecret` | Yes | |
+| `AuthId` | Yes | |
+| `AuthToken` | Yes | |
+| `Region` | No | `au` |
+| `AccountId` | No | `35511` |
+| `OutFile` | No | `recordings.json` next to the script |
 
 The output file looks like this:
 
@@ -73,11 +94,38 @@ The output file looks like this:
 
 `fetched_at` is UTC. `recordings` is every recording returned by the API for that account.
 
+### Download call audio for one day
+
+`Get-DubberRecordingAudio.ps1` pages the same recordings list, keeps calls whose `start_time` falls on `Date`, and saves each mp3. `Date` is a calendar day in the timezone of the computer running the script. Dubber sends `start_time` in UTC, and the script converts local midnight before it compares.
+
+The file link is returned only when `Listener` is the email of a Dubber user who can open that recording. Files land in `recordings/<date>/` as `{recording-id}.mp3`. A file that is already there is left in place.
+
+```powershell
+.\Get-DubberRecordingAudio.ps1 `
+  -ClientId "your-mashery-client-id" `
+  -ClientSecret "your-mashery-client-secret" `
+  -AuthId "your-auth-id" `
+  -AuthToken "your-auth-token" `
+  -Listener "agent@example.com" `
+  -Date "2026-10-16" `
+  -OutDir ".\recordings\2026-10-16"
+```
+
+| Parameter | Required | Default |
+| --- | --- | --- |
+| `Listener` | Yes | |
+| `Date` | Yes | `yyyy-MM-dd` in the local timezone |
+| `OutDir` | No | `recordings/<date>/` next to the script |
+
+`Region` and `AccountId` use the same defaults as `Get-DubberRecordings.ps1`.
+
 ## What stays out of git
 
 `.gitignore` excludes script output and local-only files, including:
 
+- `Dubber.local.ps1` (your filled-in credentials runner)
 - `recordings.json` and other `*.json`, `*.csv`, and `*.xml` exports
+- `recordings/` and `*.mp3` audio downloads
 - `output/` and `exports/`
 - `.env` files
 - `curl.sh` (local scratch; do not add it)

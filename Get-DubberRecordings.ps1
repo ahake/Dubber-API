@@ -7,39 +7,75 @@
   Requests a bearer token, then pages through GET /accounts/{id}/recordings
   (count=100 + before_id) and writes all recordings to a local JSON file.
 
-  Environment variables:
-    DUBBER_CLIENT_ID, DUBBER_CLIENT_SECRET, DUBBER_AUTH_ID, DUBBER_AUTH_TOKEN
-    DUBBER_REGION       Optional. Defaults to "au".
-    DUBBER_ACCOUNT_ID   Optional. Defaults to "35511".
-    DUBBER_OUT_FILE     Optional. Defaults to ".\recordings.json".
+  Pass credentials as parameters. Prefer Dubber.local.ps1 (gitignored) so secrets
+  stay out of the repository.
+
+.PARAMETER ClientId
+  Mashery Client ID for the same region (developer.dubber.net).
+
+.PARAMETER ClientSecret
+  Mashery Client Secret.
+
+.PARAMETER AuthId
+  Auth ID from the Dubber portal API tab.
+
+.PARAMETER AuthToken
+  Auth Token from the Dubber portal API tab.
+
+.PARAMETER Region
+  Optional. Defaults to "au".
+
+.PARAMETER AccountId
+  Optional. Defaults to "35511".
+
+.PARAMETER OutFile
+  Optional. Defaults to ".\recordings.json" next to this script.
 
 .EXAMPLE
-  .\Get-DubberRecordings.ps1
+  .\Get-DubberRecordings.ps1 -ClientId "..." -ClientSecret "..." -AuthId "..." -AuthToken "..."
 #>
+
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$ClientId,
+
+    [Parameter(Mandatory = $true)]
+    [string]$ClientSecret,
+
+    [Parameter(Mandatory = $true)]
+    [string]$AuthId,
+
+    [Parameter(Mandatory = $true)]
+    [string]$AuthToken,
+
+    [string]$Region = "au",
+
+    [string]$AccountId = "35511",
+
+    [string]$OutFile
+)
 
 $ErrorActionPreference = "Stop"
 
-$required = @(
-    "DUBBER_CLIENT_ID",
-    "DUBBER_CLIENT_SECRET",
-    "DUBBER_AUTH_ID",
-    "DUBBER_AUTH_TOKEN"
-)
+$clientId     = $ClientId.Trim()
+$clientSecret = $ClientSecret.Trim()
+$authId       = $AuthId.Trim()
+$authToken    = $AuthToken.Trim()
+$region       = $Region.Trim().ToLowerInvariant()
+$accountId    = $AccountId.Trim()
 
-$missing = $required | Where-Object { [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_)) }
-if ($missing) {
-    Write-Error ("Missing required environment variable(s): {0}." -f ($missing -join ", "))
-    exit 1
+if ([string]::IsNullOrWhiteSpace($region)) {
+    $region = "au"
 }
-
-$clientId     = $env:DUBBER_CLIENT_ID.Trim()
-$clientSecret = $env:DUBBER_CLIENT_SECRET.Trim()
-$authId       = $env:DUBBER_AUTH_ID.Trim()
-$authToken    = $env:DUBBER_AUTH_TOKEN.Trim()
-
-$region    = if ([string]::IsNullOrWhiteSpace($env:DUBBER_REGION)) { "au" } else { $env:DUBBER_REGION.Trim().ToLowerInvariant() }
-$accountId = if ([string]::IsNullOrWhiteSpace($env:DUBBER_ACCOUNT_ID)) { "35511" } else { $env:DUBBER_ACCOUNT_ID.Trim() }
-$outFile   = if ([string]::IsNullOrWhiteSpace($env:DUBBER_OUT_FILE)) { Join-Path $PSScriptRoot "recordings.json" } else { $env:DUBBER_OUT_FILE.Trim() }
+if ([string]::IsNullOrWhiteSpace($accountId)) {
+    $accountId = "35511"
+}
+if ([string]::IsNullOrWhiteSpace($OutFile)) {
+    $outFile = Join-Path $PSScriptRoot "recordings.json"
+}
+else {
+    $outFile = $OutFile.Trim()
+}
 
 $baseUrl = "https://api.dubber.net/$region/v1"
 
